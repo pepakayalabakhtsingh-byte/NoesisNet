@@ -3,6 +3,7 @@ from datetime import datetime
 from bson import ObjectId
 import logging
 import uuid
+import asyncio
 
 from app.database import get_db
 from app.services.file_handler import FileHandler
@@ -11,6 +12,10 @@ from app.services.pdf_service import PDFExtractor
 from app.services.schematic_service import SchematicExtractor
 from app.services.table_service import TableExtractor
 from app.services.entity_service import EntityExtractor
+from app.services.graph_service import GraphBuilder
+from app.services.embedding_service import EmbeddingService
+from app.services.weaviate_service import WeaviateService
+from app.utils.text_chunker import chunk_text
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -71,6 +76,33 @@ async def process_document_background(doc_id: str, file_path: str, category: str
             {"$set": update_payload}
         )
         logger.info(f"Document {doc_id} processed with status {status}")
+
+        if status == "completed":
+            try:
+                builder = GraphBuilder()
+                await builder.build_for_document(doc_id)
+                logger.info(f"Graph auto-built for {doc_id}")
+            except Exception as e:
+                logger.error(f"Auto graph build failed for {doc_id}: {e}")
+                
+            try:
+                if text_to_process:
+                    doc_meta = await db.documents.find_one({"_id": ObjectId(doc_id)})
+                    filename = doc_meta.get("filename", "Unknown") if doc_meta else "Document"
+                    
+                    def _embed_and_store():
+                        chunks = chunk_text(text_to_process)
+                        if chunks:
+                            embed_svc = EmbeddingService()
+                            weaviate_svc = WeaviateService()
+                            weaviate_svc.delete_document_chunks(doc_id)
+                            vectors = embed_svc.embed(chunks)
+                            weaviate_svc.add_chunks(doc_id, filename, category, chunks, vectors)
+                            
+                    await asyncio.to_thread(_embed_and_store)
+                    logger.info(f"Chunks embedded for {doc_id}")
+            except Exception as e:
+                logger.error(f"Embedding failed for {doc_id}: {e}")
 
     except Exception as e:
         logger.error(f"Background processing error for {doc_id}: {e}")
@@ -169,6 +201,12 @@ async def extract_entities_manual(doc_id: str):
             }}
         )
         
+        try:
+            builder = GraphBuilder()
+            await builder.build_for_document(doc_id)
+        except Exception as e:
+            logger.error(f"Manual graph build failed for {doc_id}: {e}")
+            
         updated_doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
         updated_doc["_id"] = str(updated_doc["_id"])
         return updated_doc

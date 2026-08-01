@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import connect_to_mongo, close_mongo_connection
-from app.routers import upload
+from app.routers import upload, graph, search
+from app.services.graph_service import GraphBuilder
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -27,9 +28,13 @@ async def startup_db_client():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     await close_mongo_connection()
+    builder = GraphBuilder()
+    builder.close()
 
 # Include routers
 app.include_router(upload.router, tags=["Upload"])
+app.include_router(graph.router)
+app.include_router(search.router)
 
 @app.get("/")
 async def root():

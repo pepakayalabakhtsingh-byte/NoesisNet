@@ -40,6 +40,16 @@ This project contains the full-stack scaffolding for the Multi-Modal Knowledge G
    ```
    The backend will be available at `http://localhost:8000`.
 
+### 1.1 Weaviate (Vector Database) Setup
+For semantic search, you need a Weaviate instance running. The easiest way is via Docker.
+Run the following command:
+```bash
+docker run -d -p 8080:8080 --name weaviate \
+  -e AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true \
+  semitechnologies/weaviate:latest
+```
+Ensure your `WEAVIATE_URL` in `.env` is set to `http://localhost:8080`. Note: the first time you run the backend, it will automatically download the `sentence-transformers` embedding model locally.
+
 ## 2. Frontend Setup
 
 1. Open a new terminal and navigate to `frontend/`:

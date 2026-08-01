@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, UploadCloud, FileText, Menu, X, Database } from 'lucide-react';
+import { LayoutDashboard, UploadCloud, FileText, Menu, X, Database, Share2, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -15,6 +15,8 @@ export default function Sidebar() {
   const links = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard size={20} /> },
     { name: 'Upload', path: '/upload', icon: <UploadCloud size={20} /> },
+    { name: 'Search', path: '/search', icon: <Search size={20} /> },
+    { name: 'Knowledge Graph', path: '/graph', icon: <Share2 size={20} /> },
     { name: 'Documents', path: '/documents', icon: <FileText size={20} /> },
   ];
 

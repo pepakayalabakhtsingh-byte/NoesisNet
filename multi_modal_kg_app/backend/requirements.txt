@@ -14,3 +14,6 @@ Pillow
 pandas
 openpyxl
 spacy
+neo4j
+weaviate-client==3.26.7
+sentence-transformers

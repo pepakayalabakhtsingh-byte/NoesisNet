@@ -32,3 +32,23 @@ export const triggerEntityExtraction = async (id) => {
   const response = await api.post(`/documents/${id}/extract-entities`);
   return response.data;
 };
+
+export const fetchGraphData = async (limit = 200) => {
+  const response = await api.get(`/api/graph/graph-data?limit=${limit}`);
+  return response.data;
+};
+
+export const triggerFullBuild = async () => {
+  const response = await api.post('/api/graph/build');
+  return response.data;
+};
+
+export const searchDocuments = async (query, top_k = 5) => {
+  const response = await api.get(`/api/search?q=${encodeURIComponent(query)}&top_k=${top_k}`);
+  return response.data;
+};
+
+export const triggerRebuildEmbeddings = async () => {
+  const response = await api.post('/api/search/embeddings/rebuild-all');
+  return response.data;
+};
