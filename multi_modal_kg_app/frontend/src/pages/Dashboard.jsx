@@ -33,6 +33,10 @@ export default function Dashboard() {
     { label: 'Failed', value: documents.filter(d => d.status === 'failed').length, icon: <AlertCircle size={20} className="text-red-400" /> },
   ];
 
+  const [filter, setFilter] = useState('all');
+  
+  const filteredDocuments = documents.filter(doc => filter === 'all' || doc.category === filter);
+
   return (
     <div className="space-y-8">
       <div>
@@ -61,14 +65,28 @@ export default function Dashboard() {
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold text-white mb-4">Recent Documents</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-white">Recent Documents</h2>
+          <div className="flex items-center gap-2">
+            {['all', 'audio', 'pdf', 'schematic', 'table'].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setFilter(cat)}
+                className={`px-4 py-1.5 rounded-full text-sm capitalize transition-all ${filter === cat ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+        
         {loading ? (
           <div className="flex justify-center p-12">
             <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {documents.length > 0 ? documents.map((doc, i) => (
+            {filteredDocuments.length > 0 ? filteredDocuments.map((doc, i) => (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}

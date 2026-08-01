@@ -27,3 +27,8 @@ export const getDocumentById = async (id) => {
   const response = await api.get(`/documents/${id}`);
   return response.data;
 };
+
+export const triggerEntityExtraction = async (id) => {
+  const response = await api.post(`/documents/${id}/extract-entities`);
+  return response.data;
+};

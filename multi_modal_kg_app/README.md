@@ -28,7 +28,12 @@ This project contains the full-stack scaffolding for the Multi-Modal Knowledge G
    - Create a free cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
    - Get your connection string (e.g., `mongodb+srv://...`).
    - Copy `.env.example` to `.env` and replace `MONGODB_URI` with your connection string.
-5. Make sure you have `ffmpeg` installed on your system (required for Whisper).
+5. Install System Dependencies:
+   - **ffmpeg**: Required for OpenAI Whisper audio transcription.
+   - **Tesseract OCR**: Required for Image/Schematic text extraction.
+     - **Windows**: Download the installer from the official repository and add it to your system PATH. Alternatively, set the `TESSERACT_CMD` environment variable to the exact path of `tesseract.exe`.
+     - **macOS**: `brew install tesseract`
+     - **Ubuntu/Debian**: `sudo apt install tesseract-ocr`
 6. Run the server:
    ```bash
    uvicorn app.main:app --reload
@@ -52,7 +57,11 @@ This project contains the full-stack scaffolding for the Multi-Modal Knowledge G
    The frontend will be available at `http://localhost:3000`.
 
 ## Features
-- **Drag & Drop Upload:** Upload PDFs, Images, Tables, and Audio.
-- **Background Processing:** Audio files are transcribed using OpenAI Whisper asynchronously in the background.
-- **Live Polling:** The dashboard polls the backend every 5 seconds to update the status from `pending` -> `processing` -> `completed`.
-- **Sleek UI:** Dark theme, glass-morphism effects, and Framer Motion animations.
+- **Multi-Modal Upload:** Drag and drop support for PDFs, Images/Schematics, Spreadsheets, and Audio.
+- **Background Extraction Pipelines:**
+  - **Audio:** OpenAI Whisper transcription.
+  - **PDFs:** Text and embedded tabular structure extraction via `pdfplumber`.
+  - **Images:** Intelligent OCR extraction via `pytesseract`.
+  - **Spreadsheets:** Parsed rows and columns for CSV/Excel via `pandas`.
+- **Live Polling:** The dashboard polls the backend every 5 seconds to automatically reflect real-time processing statuses.
+- **Rich Document Viewer:** A stunning UI to deeply inspect extracted contents in tabs (Text, Tables, Rows, Raw JSON).

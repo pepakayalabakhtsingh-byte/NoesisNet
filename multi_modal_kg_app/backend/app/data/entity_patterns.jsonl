@@ -1,0 +1,23 @@
+{"label": "REGULATION", "pattern": [{"LOWER": "gdpr"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "hipaa"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "ccpa"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "sox"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "ferpa"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "pci"}, {"LOWER": "dss"}]}
+{"label": "REGULATION", "pattern": [{"LOWER": "iso"}, {"IS_PUNCT": true, "OP": "?"}, {"LOWER": "27001"}]}
+{"label": "DOCTYPE", "pattern": [{"LOWER": "policy"}]}
+{"label": "DOCTYPE", "pattern": [{"LOWER": "standard"}]}
+{"label": "DOCTYPE", "pattern": [{"LOWER": "procedure"}]}
+{"label": "DOCTYPE", "pattern": [{"LOWER": "guideline"}]}
+{"label": "DOCTYPE", "pattern": [{"LOWER": "framework"}]}
+{"label": "COMPLIANCE_TERM", "pattern": [{"LOWER": "non-compliance"}]}
+{"label": "COMPLIANCE_TERM", "pattern": [{"LOWER": "audit"}]}
+{"label": "COMPLIANCE_TERM", "pattern": [{"LOWER": "penalty"}]}
+{"label": "COMPLIANCE_TERM", "pattern": [{"LOWER": "fine"}]}
+{"label": "DATE", "pattern": [{"SHAPE": "dd/dd/dddd"}]}
+{"label": "DATE", "pattern": [{"SHAPE": "dd-dd-dddd"}]}
+{"label": "DATE", "pattern": [{"SHAPE": "dddd-dd-dd"}]}
+{"label": "DATE", "pattern": [{"SHAPE": "dddd/dd/dd"}]}
+{"label": "ROLE", "pattern": [{"LOWER": "data"}, {"LOWER": "processor"}]}
+{"label": "ROLE", "pattern": [{"LOWER": "data"}, {"LOWER": "controller"}]}
+{"label": "ROLE", "pattern": [{"LOWER": "compliance"}, {"LOWER": "officer"}]}

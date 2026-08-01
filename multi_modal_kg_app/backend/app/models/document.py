@@ -19,6 +19,13 @@ class DocumentInDB(DocumentBase):
     segments: List[Any] = []
     duration_seconds: Optional[float] = None
     error: Optional[str] = None
+    tables: Optional[List[Any]] = None
+    rows: Optional[List[dict]] = None
+    columns: Optional[List[str]] = None
+    raw_ocr: Optional[bool] = None
+    pages: Optional[int] = None
+    entities: Optional[List[Any]] = None
+    relations: Optional[List[Any]] = None
 
 class JobStatus(BaseModel):
     job_id: str

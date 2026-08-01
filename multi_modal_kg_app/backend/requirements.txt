@@ -8,3 +8,9 @@ openai-whisper
 python-magic>=0.4.27
 python-magic-bin>=0.4.14; sys_platform == 'win32'
 torch
+pdfplumber
+pytesseract
+Pillow
+pandas
+openpyxl
+spacy

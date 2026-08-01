@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, FileAudio, Image, Table, Clock } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 
@@ -12,8 +13,12 @@ const getIcon = (category) => {
 };
 
 export default function DocumentCard({ document }) {
+  const navigate = useNavigate();
   return (
-    <div className="glass p-5 rounded-xl hover:border-white/20 transition-all duration-200 flex flex-col h-full cursor-pointer hover:bg-white/5">
+    <div 
+      onClick={() => navigate(`/documents/${document._id}`)}
+      className="glass p-5 rounded-xl hover:border-white/20 transition-all duration-200 flex flex-col h-full cursor-pointer hover:bg-white/5 hover:scale-[1.02]"
+    >
       <div className="flex justify-between items-start mb-4">
         <div className="p-3 bg-white/5 rounded-lg border border-white/5">
           {getIcon(document.category)}
