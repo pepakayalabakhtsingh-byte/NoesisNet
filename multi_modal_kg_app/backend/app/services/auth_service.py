@@ -16,11 +16,14 @@ class AuthService:
     def db(self):
         return get_db()
         
+    def _truncate_pwd(self, pwd: str) -> str:
+        return pwd.encode('utf-8')[:72].decode('utf-8', 'ignore')
+
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password[:72], hashed_password)
+        return pwd_context.verify(self._truncate_pwd(plain_password), hashed_password)
         
     def get_password_hash(self, password: str) -> str:
-        return pwd_context.hash(password[:72])
+        return pwd_context.hash(self._truncate_pwd(password))
         
     async def get_user_by_email(self, email: str) -> Optional[dict]:
         user_doc = await self.db.users.find_one({"email": email})
