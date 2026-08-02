@@ -4,10 +4,8 @@ motor>=3.3.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 python-multipart>=0.0.6
-openai-whisper
 python-magic>=0.4.27
 python-magic-bin>=0.4.14; sys_platform == 'win32'
-torch
 pdfplumber
 pytesseract
 Pillow
@@ -16,7 +14,6 @@ openpyxl
 spacy
 neo4j
 weaviate-client==3.26.7
-sentence-transformers
 huggingface_hub
 scikit-learn
 passlib[bcrypt]
