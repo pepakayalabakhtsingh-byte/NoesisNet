@@ -17,10 +17,10 @@ class AuthService:
         return get_db()
         
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+        return pwd_context.verify(plain_password[:72], hashed_password)
         
     def get_password_hash(self, password: str) -> str:
-        return pwd_context.hash(password)
+        return pwd_context.hash(password[:72])
         
     async def get_user_by_email(self, email: str) -> Optional[dict]:
         user_doc = await self.db.users.find_one({"email": email})
