@@ -65,6 +65,11 @@ class WeaviateService:
                         "name": "category",
                         "dataType": ["string"],
                         "description": "Document category type"
+                    },
+                    {
+                        "name": "user_id",
+                        "dataType": ["string"],
+                        "description": "User owner ID"
                     }
                 ]
             }
@@ -74,8 +79,8 @@ class WeaviateService:
         except Exception as e:
             logger.error(f"Failed to create schema: {e}")
 
-    def add_chunks(self, doc_id: str, document_name: str, category: str, chunks: list[str], vectors: list[list[float]]):
-        if not self.client or not chunks or not vectors: return
+    def add_chunks(self, doc_id: str, document_name: str, category: str, chunks: list[str], vectors: list[list[float]], user_id: str):
+        if not self.client or not chunks or not vectors or not user_id: return
         
         try:
             with self.client.batch(batch_size=100) as batch:
@@ -85,7 +90,8 @@ class WeaviateService:
                         "text": chunk,
                         "document_name": document_name,
                         "chunk_index": i,
-                        "category": category
+                        "category": category,
+                        "user_id": user_id
                     }
                     batch.add_data_object(
                         data_object=properties,
@@ -112,13 +118,19 @@ class WeaviateService:
         except Exception as e:
             logger.warning(f"Could not delete chunks for {doc_id}: {e}")
 
-    def search(self, query_vector: list[float], top_k: int = 5) -> list[dict]:
-        if not self.client: return []
+    def search(self, query_vector: list[float], top_k: int = 5, user_id: str = None) -> list[dict]:
+        if not self.client or not user_id: return []
         try:
+            where_filter = {
+                "path": ["user_id"],
+                "operator": "Equal",
+                "valueString": user_id
+            }
             result = (
                 self.client.query
-                .get("DocumentChunk", ["doc_id", "text", "document_name", "chunk_index", "category"])
+                .get("DocumentChunk", ["doc_id", "text", "document_name", "chunk_index", "category", "user_id"])
                 .with_near_vector({"vector": query_vector})
+                .with_where(where_filter)
                 .with_additional(["distance"])
                 .with_limit(top_k)
                 .do()

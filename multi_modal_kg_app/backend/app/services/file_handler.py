@@ -4,13 +4,7 @@ try:
 except ImportError:
     HAS_MAGIC = False
 
-import uuid
-import shutil
 from pathlib import Path
-from fastapi import UploadFile
-
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Based on previous phase supported extensions
 SUPPORTED_EXTENSIONS = {
@@ -21,17 +15,6 @@ SUPPORTED_EXTENSIONS = {
 }
 
 class FileHandler:
-    @staticmethod
-    def save_file(file: UploadFile) -> str:
-        """Saves the uploaded file to local disk and returns the path."""
-        ext = Path(file.filename).suffix
-        unique_filename = f"{uuid.uuid4()}{ext}"
-        file_path = UPLOAD_DIR / unique_filename
-        
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        return str(file_path)
 
     @staticmethod
     def get_metadata(file_path: str, original_filename: str) -> dict:

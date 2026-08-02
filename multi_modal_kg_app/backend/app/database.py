@@ -1,5 +1,5 @@
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -38,3 +38,6 @@ async def init_db():
 
 def get_db():
     return db_instance.db
+
+def get_gridfs_bucket() -> AsyncIOMotorGridFSBucket:
+    return AsyncIOMotorGridFSBucket(db_instance.db, bucket_name="uploads")

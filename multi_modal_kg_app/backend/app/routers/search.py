@@ -1,4 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Depends
+from app.dependencies import get_current_user
 from app.database import get_db
 from app.services.embedding_service import EmbeddingService
 from app.services.weaviate_service import WeaviateService
@@ -9,8 +10,8 @@ import asyncio
 router = APIRouter(prefix="/api/search", tags=["Semantic Search"])
 logger = logging.getLogger(__name__)
 
-@router.get("/")
-async def search_documents(q: str, top_k: int = Query(default=5, le=50)):
+@router.get("")
+async def search_documents(q: str, top_k: int = Query(default=5, le=50), current_user: dict = Depends(get_current_user)):
     if not q.strip():
         return []
     
@@ -22,7 +23,7 @@ async def search_documents(q: str, top_k: int = Query(default=5, le=50)):
             vector = embed_svc.embed_single(q)
             if not vector: return []
             
-            return weaviate_svc.search(vector, top_k)
+            return weaviate_svc.search(vector, top_k, user_id=current_user["_id"])
             
         results = await asyncio.to_thread(_do_search)
         return results
@@ -31,10 +32,11 @@ async def search_documents(q: str, top_k: int = Query(default=5, le=50)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/embeddings/rebuild-all")
-async def rebuild_all_embeddings(background_tasks: BackgroundTasks):
+async def rebuild_all_embeddings(background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    user_id = current_user["_id"]
     async def _rebuild():
         db = get_db()
-        cursor = db.documents.find({"status": "completed"})
+        cursor = db.documents.find({"status": "completed", "user_id": user_id})
         docs = []
         async for doc in cursor:
             docs.append(doc)
@@ -51,7 +53,7 @@ async def rebuild_all_embeddings(background_tasks: BackgroundTasks):
                 weaviate_svc = WeaviateService()
                 weaviate_svc.delete_document_chunks(doc_id)
                 vectors = embed_svc.embed(chunks)
-                weaviate_svc.add_chunks(doc_id, doc.get("filename", "Unknown"), doc.get("category", "unknown"), chunks, vectors)
+                weaviate_svc.add_chunks(doc_id, doc.get("filename", "Unknown"), doc.get("category", "unknown"), chunks, vectors, user_id=user_id)
                 
         for doc in docs:
             try:

@@ -37,17 +37,17 @@ class GraphBuilder:
         except Exception as e:
             logger.warning(f"Could not create Neo4j constraints (make sure Neo4j is running): {e}")
                 
-    async def build_for_document(self, doc_id: str):
+    async def build_for_document(self, doc_id: str, user_id: str):
         db = get_db()
-        doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+        doc = await db.documents.find_one({"_id": ObjectId(doc_id), "user_id": user_id})
         if not doc:
             raise ValueError(f"Document {doc_id} not found in MongoDB.")
             
         return await asyncio.to_thread(self._build_for_document_sync, doc)
         
-    async def build_all(self):
+    async def build_all(self, user_id: str):
         db = get_db()
-        cursor = db.documents.find({"status": "completed"})
+        cursor = db.documents.find({"status": "completed", "user_id": user_id})
         docs = []
         async for doc in cursor:
             docs.append(doc)
@@ -62,6 +62,7 @@ class GraphBuilder:
         doc_id = str(doc["_id"])
         filename = doc.get("filename", "Unknown")
         category = doc.get("category", "unknown")
+        user_id = doc.get("user_id")
         
         entities = doc.get("entities", [])
         relations = doc.get("relations", [])
@@ -71,20 +72,20 @@ class GraphBuilder:
             
         try:
             with self.driver.session() as session:
-                session.execute_write(self._merge_graph_tx, doc_id, filename, category, entities, relations)
+                session.execute_write(self._merge_graph_tx, doc_id, filename, category, user_id, entities, relations)
         except Exception as e:
             logger.error(f"Neo4j Transaction failed for {doc_id}: {e}")
             
     @staticmethod
-    def _merge_graph_tx(tx, doc_id, filename, category, entities, relations):
+    def _merge_graph_tx(tx, doc_id, filename, category, user_id, entities, relations):
         # Merge Document Node
         tx.run(
             """
             MERGE (d:Document {doc_id: $doc_id})
-            ON CREATE SET d.filename = $filename, d.category = $category
-            ON MATCH SET d.filename = $filename, d.category = $category
+            ON CREATE SET d.filename = $filename, d.category = $category, d.user_id = $user_id
+            ON MATCH SET d.filename = $filename, d.category = $category, d.user_id = $user_id
             """,
-            doc_id=doc_id, filename=filename, category=category
+            doc_id=doc_id, filename=filename, category=category, user_id=user_id
         )
         
         # Merge Entities and Link to Document
@@ -143,19 +144,22 @@ class GraphBuilder:
                 rel_type=rel_type, doc_id=doc_id
             )
             
-    async def get_graph_data(self, limit=200):
-        return await asyncio.to_thread(self._get_graph_data_sync, limit)
+    async def get_graph_data(self, limit=200, user_id=None):
+        return await asyncio.to_thread(self._get_graph_data_sync, limit, user_id)
 
-    def _get_graph_data_sync(self, limit):
+    def _get_graph_data_sync(self, limit, user_id):
         try:
             with self.driver.session() as session:
                 result = session.run(
                     """
-                    MATCH (n:Entity)-[r:RELATES_TO]->(m:Entity)
+                    MATCH (d:Document {user_id: $user_id})-[:CONTAINS]->(n:Entity)
+                    WITH collect(d.doc_id) AS user_doc_ids, n
+                    MATCH (n)-[r:RELATES_TO]->(m:Entity)
+                    WHERE r.doc_id IN user_doc_ids
                     RETURN n, r, m
                     LIMIT $limit
                     """,
-                    limit=limit
+                    limit=limit, user_id=user_id
                 )
                 nodes = {}
                 links = []
@@ -176,7 +180,10 @@ class GraphBuilder:
                     
                 if len(nodes) < limit:
                     rem_limit = limit - len(nodes)
-                    res2 = session.run("MATCH (n:Entity) RETURN n LIMIT $rem", rem=rem_limit)
+                    res2 = session.run(
+                        "MATCH (n:Entity)<-[:CONTAINS]-(d:Document {user_id: $user_id}) RETURN n LIMIT $rem", 
+                        rem=rem_limit, user_id=user_id
+                    )
                     for record in res2:
                         n = record["n"]
                         if n["id"] not in nodes:

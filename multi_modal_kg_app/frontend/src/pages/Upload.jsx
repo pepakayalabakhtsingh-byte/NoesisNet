@@ -8,14 +8,14 @@ export default function Upload() {
 
   const handleSuccess = (result) => {
     setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    setTimeout(() => setSuccess(false), 4000);
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-12 space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-2">Upload Data</h1>
-        <p className="text-slate-400">Add new documents, audio, or schematics to the Knowledge Graph.</p>
+    <div className="max-w-4xl mx-auto mt-8 space-y-8">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-3 tracking-tight">Upload Data</h1>
+        <p className="text-slate-600 dark:text-slate-400 text-lg">Add new documents, audio, or schematics to synthesize into the Knowledge Graph.</p>
       </div>
 
       <FileUpload onUploadSuccess={handleSuccess} />
@@ -23,13 +23,13 @@ export default function Upload() {
       <AnimatePresence>
         {success && (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="p-4 bg-green-500/20 border border-green-500/50 rounded-xl flex items-center justify-center gap-2 text-green-200"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-center gap-3 text-emerald-700 dark:text-emerald-400 shadow-lg shadow-emerald-500/10"
           >
-            <CheckCircle size={20} />
-            <span>Document uploaded successfully! Processing in background.</span>
+            <CheckCircle size={24} />
+            <span className="font-medium">Document uploaded successfully! Processing in background.</span>
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,15 +1,15 @@
-from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, BackgroundTasks, HTTPException, Query, Depends
 from datetime import datetime
 from bson import ObjectId
 import logging
 import uuid
 import asyncio
 
-from app.database import get_db
-from app.services.file_handler import FileHandler
+from app.database import get_db, get_gridfs_bucket
 from app.services.audio_service import AudioTranscriber
 from app.services.pdf_service import PDFExtractor
 from app.services.schematic_service import SchematicExtractor
+from app.dependencies import get_current_user
 from app.services.table_service import TableExtractor
 from app.services.entity_service import EntityExtractor
 from app.services.graph_service import GraphBuilder
@@ -20,7 +20,7 @@ from app.utils.text_chunker import chunk_text
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-async def process_document_background(doc_id: str, file_path: str, category: str):
+async def process_document_background(doc_id: str, gridfs_file_id: str, original_filename: str, user_id: str):
     db = get_db()
     try:
         # Update status to processing
@@ -29,22 +29,45 @@ async def process_document_background(doc_id: str, file_path: str, category: str
             {"$set": {"status": "processing", "updated_at": datetime.utcnow()}}
         )
         
-        result = {}
-        if category == "audio":
-            result = AudioTranscriber.process(file_path)
-        elif category == "pdf":
-            result = PDFExtractor.process(file_path)
-        elif category == "schematic":
-            result = SchematicExtractor.process(file_path)
-        elif category == "table":
-            result = TableExtractor.process(file_path)
-        else:
-            result = {
-                "text": "",
-                "error": "Unsupported category or no processing required yet."
-            }
+        from app.utils.file_storage import download_to_temp, delete_temp
+        from app.services.file_handler import FileHandler
+        
+        temp_path = await download_to_temp(gridfs_file_id)
+        
+        try:
+            # Get metadata
+            metadata = FileHandler.get_metadata(str(temp_path), original_filename)
+            category = metadata["category"]
             
-        status = "failed" if result.get("error") else "completed"
+            # Update doc with new metadata
+            await db.documents.update_one(
+                {"_id": ObjectId(doc_id)},
+                {"$set": {
+                    "size_bytes": metadata["size_bytes"],
+                    "mime_type": metadata["mime_type"],
+                    "category": category,
+                    "updated_at": datetime.utcnow()
+                }}
+            )
+            
+            result = {}
+            if category == "audio":
+                result = AudioTranscriber.process(str(temp_path))
+            elif category == "pdf":
+                result = PDFExtractor.process(str(temp_path))
+            elif category == "schematic":
+                result = SchematicExtractor.process(str(temp_path))
+            elif category == "table":
+                result = TableExtractor.process(str(temp_path))
+            else:
+                result = {
+                    "text": "",
+                    "error": "Unsupported category or no processing required yet."
+                }
+                
+            status = "failed" if result.get("error") else "completed"
+        finally:
+            await delete_temp(temp_path)
         
         update_payload = {
             "status": status,
@@ -80,7 +103,7 @@ async def process_document_background(doc_id: str, file_path: str, category: str
         if status == "completed":
             try:
                 builder = GraphBuilder()
-                await builder.build_for_document(doc_id)
+                await builder.build_for_document(doc_id, user_id)
                 logger.info(f"Graph auto-built for {doc_id}")
             except Exception as e:
                 logger.error(f"Auto graph build failed for {doc_id}: {e}")
@@ -97,7 +120,7 @@ async def process_document_background(doc_id: str, file_path: str, category: str
                             weaviate_svc = WeaviateService()
                             weaviate_svc.delete_document_chunks(doc_id)
                             vectors = embed_svc.embed(chunks)
-                            weaviate_svc.add_chunks(doc_id, filename, category, chunks, vectors)
+                            weaviate_svc.add_chunks(doc_id, filename, category, chunks, vectors, user_id=user_id)
                             
                     await asyncio.to_thread(_embed_and_store)
                     logger.info(f"Chunks embedded for {doc_id}")
@@ -112,19 +135,33 @@ async def process_document_background(doc_id: str, file_path: str, category: str
         )
 
 
-@router.post("/upload")
-async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+@router.post("/api/upload")
+async def upload_document(
+    background_tasks: BackgroundTasks, 
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
     try:
-        # Save file
-        file_path = FileHandler.save_file(file)
+        fs = get_gridfs_bucket()
+        grid_in = fs.open_upload_stream(file.filename, metadata={"content_type": file.content_type})
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            await grid_in.write(chunk)
+        await grid_in.close()
+        gridfs_file_id = str(grid_in._id)
         
-        # Get metadata
-        metadata = FileHandler.get_metadata(file_path, file.filename)
-        
-        # Create document in DB
+        # Create document in DB with minimal metadata, actual metadata will be populated by background task
         db = get_db()
         doc = {
-            **metadata,
+            "filename": file.filename,
+            "path": "", # Not used with GridFS
+            "gridfs_file_id": gridfs_file_id,
+            "size_bytes": 0,
+            "mime_type": file.content_type or "application/octet-stream",
+            "category": "unknown",
+            "user_id": current_user["_id"],
             "status": "pending",
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -139,7 +176,7 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
         doc_id = str(insert_result.inserted_id)
         
         # Dispatch background task
-        background_tasks.add_task(process_document_background, doc_id, file_path, metadata["category"])
+        background_tasks.add_task(process_document_background, doc_id, gridfs_file_id, file.filename, current_user["_id"])
         
         return {"id": doc_id, "status": "pending"}
         
@@ -148,35 +185,71 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
         raise HTTPException(status_code=500, detail="File upload failed")
 
 
-@router.get("/documents")
-async def get_documents(skip: int = 0, limit: int = Query(default=100, le=100)):
+@router.get("/api/documents")
+async def list_documents(
+    skip: int = 0, 
+    limit: int = Query(default=100, le=100),
+    current_user: dict = Depends(get_current_user)
+):
     db = get_db()
-    cursor = db.documents.find().sort("created_at", -1).skip(skip).limit(limit)
+    cursor = db.documents.find({"user_id": current_user["_id"]}).sort("created_at", -1).skip(skip).limit(limit)
     docs = []
     async for document in cursor:
         document["_id"] = str(document["_id"])
         docs.append(document)
     return docs
 
-@router.get("/documents/{doc_id}")
-async def get_document(doc_id: str):
+@router.get("/api/documents/{doc_id}")
+async def get_document(doc_id: str, current_user: dict = Depends(get_current_user)):
     db = get_db()
     if not ObjectId.is_valid(doc_id):
         raise HTTPException(status_code=400, detail="Invalid Document ID")
         
-    document = await db.documents.find_one({"_id": ObjectId(doc_id)})
+    document = await db.documents.find_one({"_id": ObjectId(doc_id), "user_id": current_user["_id"]})
     if document:
         document["_id"] = str(document["_id"])
         return document
     raise HTTPException(status_code=404, detail="Document not found")
 
-@router.post("/documents/{doc_id}/extract-entities")
-async def extract_entities_manual(doc_id: str):
+@router.post("/api/documents/{doc_id}/reprocess")
+async def reprocess_document(doc_id: str, background_tasks: BackgroundTasks, current_user: dict = Depends(get_current_user)):
+    """Re-trigger processing for a failed or stuck document."""
     db = get_db()
     if not ObjectId.is_valid(doc_id):
         raise HTTPException(status_code=400, detail="Invalid Document ID")
         
-    doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+    document = await db.documents.find_one({"_id": ObjectId(doc_id), "user_id": current_user["_id"]})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    gridfs_file_id = document.get("gridfs_file_id")
+    if not gridfs_file_id:
+        raise HTTPException(status_code=400, detail="No GridFS file associated with this document. Please re-upload.")
+    
+    # Reset status to pending
+    await db.documents.update_one(
+        {"_id": ObjectId(doc_id)},
+        {"$set": {"status": "pending", "error": None, "updated_at": datetime.utcnow()}}
+    )
+    
+    # Re-dispatch background task
+    background_tasks.add_task(
+        process_document_background,
+        doc_id,
+        gridfs_file_id,
+        document.get("filename", "unknown"),
+        current_user["_id"]
+    )
+    
+    return {"id": doc_id, "status": "pending", "message": "Document reprocessing started."}
+
+@router.post("/api/documents/{doc_id}/extract-entities")
+async def extract_entities_manual(doc_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_db()
+    if not ObjectId.is_valid(doc_id):
+        raise HTTPException(status_code=400, detail="Invalid Document ID")
+        
+    doc = await db.documents.find_one({"_id": ObjectId(doc_id), "user_id": current_user["_id"]})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
         

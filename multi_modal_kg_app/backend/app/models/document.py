@@ -8,10 +8,12 @@ class DocumentBase(BaseModel):
     size_bytes: int
     mime_type: str
     category: str
+    gridfs_file_id: Optional[str] = None
     status: str = "pending" # pending, processing, completed, failed
 
 class DocumentInDB(DocumentBase):
-    id: str = Field(alias="_id")
+    id: str = Field(alias="_id", default="")
+    user_id: str
     created_at: datetime
     updated_at: datetime
     text: str = ""

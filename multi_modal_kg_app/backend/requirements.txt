@@ -17,3 +17,9 @@ spacy
 neo4j
 weaviate-client==3.26.7
 sentence-transformers
+huggingface_hub
+scikit-learn
+passlib[bcrypt]
+python-jose[cryptography]
+aiofiles
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz

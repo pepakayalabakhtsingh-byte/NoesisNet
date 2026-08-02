@@ -2,9 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-background-light text-text-light transition-colors duration-300;
+  }
+  html.dark body {
+    @apply bg-background-dark text-text-dark;
+  }
+}
+
+/* Glass utilities - must be outside @layer utilities to support dark: pseudo-class nesting */
+.glass {
+  @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
+}
+
+.dark .glass {
+  background-color: rgba(15, 23, 42, 0.7);
+  border-color: rgba(51, 65, 85, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.glass-card {
+  @apply bg-white/50 backdrop-blur-md border border-white/10 shadow-lg rounded-2xl;
+}
+
+.dark .glass-card {
+  background-color: rgba(30, 41, 59, 0.5);
+  border-color: rgba(51, 65, 85, 0.5);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.glass-nav {
+  @apply bg-white/60 backdrop-blur-xl border-b border-gray-200/50;
+}
+
+.dark .glass-nav {
+  background-color: rgba(3, 7, 18, 0.6);
+  border-bottom-color: rgba(31, 41, 55, 0.5);
+}
+
+.gradient-text {
+  @apply text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-500;
+}
+
+.dark .gradient-text {
+  @apply from-primary-400 to-secondary-300;
+}
+
 @layer utilities {
-  .glass {
-    @apply bg-surface/70 backdrop-blur-md border border-white/10 shadow-xl;
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .animation-delay-2000 {
+    animation-delay: 2000ms;
+  }
+  .animation-delay-4000 {
+    animation-delay: 4000ms;
   }
 }
 
@@ -12,4 +69,30 @@ html, body, #root {
   height: 100%;
   width: 100%;
   margin: 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
 }
