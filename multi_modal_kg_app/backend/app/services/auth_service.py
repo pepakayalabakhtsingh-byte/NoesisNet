@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.user import UserInDB, UserCreate
 from typing import Optional
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
 
 class AuthService:
     def __init__(self):
@@ -16,14 +16,14 @@ class AuthService:
     def db(self):
         return get_db()
         
-    def _truncate_pwd(self, pwd: str) -> str:
-        return pwd.encode('utf-8')[:72].decode('utf-8', 'ignore')
-
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(self._truncate_pwd(plain_password), hashed_password)
+        try:
+            return pwd_context.verify(plain_password, hashed_password)
+        except Exception:
+            return False
         
     def get_password_hash(self, password: str) -> str:
-        return pwd_context.hash(self._truncate_pwd(password))
+        return pwd_context.hash(password)
         
     async def get_user_by_email(self, email: str) -> Optional[dict]:
         user_doc = await self.db.users.find_one({"email": email})
