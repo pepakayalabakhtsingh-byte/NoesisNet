@@ -53,7 +53,7 @@ export default function DocumentCard({ document, onReprocess }) {
       
       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4 mt-auto font-medium">
         <Clock size={14} />
-        <span>{new Date(document.created_at).toLocaleString()}</span>
+        <span>{new Date(document.created_at + (!document.created_at.endsWith('Z') ? 'Z' : '')).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} (IST)</span>
       </div>
 
       {(document.status === 'completed' && document.category === 'audio') && (

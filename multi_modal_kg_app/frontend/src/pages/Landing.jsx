@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BrainCircuit, FileSearch, Network, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, BrainCircuit, FileSearch, Network, ShieldCheck, Zap, UploadCloud, Database, MessageSquare } from 'lucide-react';
 import Logo from '../components/Logo';
 import ThemeToggle from '../components/ThemeToggle';
 
@@ -98,7 +98,6 @@ export default function Landing() {
                 { icon: <FileSearch size={32} />, title: 'Multi-Modal Ingestion', desc: 'Process PDFs, Audio, Spreadsheets, and Images natively.' },
                 { icon: <Network size={32} />, title: 'Knowledge Graph RAG', desc: 'Combines vector search with graph traversal for ultimate precision.' },
                 { icon: <BrainCircuit size={32} />, title: 'Entity Extraction', desc: 'Automatic recognition of regulations, organizations, and dates.' },
-                { icon: <ShieldCheck size={32} />, title: 'Secure Multi-Tenancy', desc: 'JWT auth with strict data isolation for every workspace.' },
               ].map((f, i) => (
                 <motion.div
                   key={i}
@@ -115,6 +114,45 @@ export default function Landing() {
                   <p className="text-slate-600 dark:text-slate-400">{f.desc}</p>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* How It Works */}
+        <section id="how-it-works" className="py-24 bg-white dark:bg-slate-950">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">How NoesisNet Works</h2>
+              <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">From raw, chaotic documents to structured, cited answers in three simple steps.</p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-12 relative">
+              {/* Connecting line for desktop */}
+              <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-primary-500/0 via-primary-500/20 to-secondary-500/0"></div>
+              
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-primary-500 mb-6 shadow-xl relative z-10">
+                  <UploadCloud size={40} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">1. Upload & Extract</h3>
+                <p className="text-slate-600 dark:text-slate-400">Drag and drop PDFs, Audio, Images, or Spreadsheets. We automatically transcribe, OCR, and parse the raw text.</p>
+              </motion.div>
+              
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="relative text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-primary-500 mb-6 shadow-xl relative z-10">
+                  <Database size={40} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">2. Synthesize Graph</h3>
+                <p className="text-slate-600 dark:text-slate-400">Entities and relationships are extracted via NLP to build a strict Knowledge Graph, alongside dense semantic vectors.</p>
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="relative text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-secondary-500 mb-6 shadow-xl relative z-10">
+                  <MessageSquare size={40} />
+                </div>
+                <h3 className="text-xl font-bold mb-3">3. Graph RAG Q&A</h3>
+                <p className="text-slate-600 dark:text-slate-400">Ask complex regulatory questions. Our AI Agent traverses the graph to give you perfect answers with inline citations.</p>
+              </motion.div>
             </div>
           </div>
         </section>

@@ -295,7 +295,7 @@ export default function Analytics() {
               {runs.map((run, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="px-6 py-4 text-slate-900 dark:text-slate-300">
-                    {run.timestamp ? new Date(run.timestamp).toLocaleString() : 'N/A'}
+                    {run.timestamp ? new Date(run.timestamp + (!run.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) + ' (IST)' : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${

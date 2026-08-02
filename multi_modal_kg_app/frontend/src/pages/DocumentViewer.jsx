@@ -136,7 +136,7 @@ export default function DocumentViewer() {
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2 break-all tracking-tight">{doc.filename}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
             <span className="capitalize px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg">{doc.category}</span>
-            <span>Uploaded: {new Date(doc.created_at).toLocaleString()}</span>
+            <span>Uploaded: {new Date(doc.created_at + (!doc.created_at.endsWith('Z') ? 'Z' : '')).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} (IST)</span>
             {doc.pages && <span>{doc.pages} Pages</span>}
           </div>
         </div>
